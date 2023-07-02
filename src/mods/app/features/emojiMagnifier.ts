@@ -2,7 +2,7 @@ import {type PossiblyUncachedTextableChannel, type Client, type Message, type Me
 import {downstreamEvents} from '../downstream.js';
 
 const handleMessageCreate = async (client: Client, message: Message<PossiblyUncachedTextableChannel>) => {
-	const singleEmojiPattern = /<:[a-zA-Z\d]+:(\d+)>/i;
+	const singleEmojiPattern = /^<:[a-zA-Z\d]+:(\d+)>$/i;
 	const emojiIdMatcher = singleEmojiPattern.exec(message.content);
 
 	if (!emojiIdMatcher) {
