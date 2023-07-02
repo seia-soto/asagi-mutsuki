@@ -6,7 +6,7 @@ run npm i -g pnpm
 from base as deps
 workdir /app
 
-copy package.json package-lock.yaml ./
+copy package.json pnpm-lock.yaml ./
 run pnpm i
 
 from base as build
