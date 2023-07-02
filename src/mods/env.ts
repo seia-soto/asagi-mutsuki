@@ -1,5 +1,4 @@
-export type EnvKeys = 'DISCORD_TOKEN'
-| 'DISCORD_ERROR_REPORT_CHANNEL';
+export type EnvKeys = 'DISCORD_TOKEN';
 
 export const useEnv = (key: EnvKeys, isOptional = false) => {
 	const value = process.env[key];
@@ -16,4 +15,3 @@ export const useEnv = (key: EnvKeys, isOptional = false) => {
 };
 
 export const aDiscordToken = useEnv('DISCORD_TOKEN');
-export const aDiscordErrorReportChannel = useEnv('DISCORD_ERROR_REPORT_CHANNEL', true);

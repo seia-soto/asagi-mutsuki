@@ -1,20 +1,9 @@
 import {type Client} from 'eris';
-import {aDiscordErrorReportChannel} from '../env.js';
 import {RateLimiter} from '../ratelimit.js';
 import {downstreamEvents} from './downstream.js';
 import {enableEmojiMagnifier} from './features/emojiMagnifier.js';
 
 export const bootstrap = async (client: Client) => {
-	process.on('uncaughtException', error => {
-		console.error(error);
-
-		if (!aDiscordErrorReportChannel) {
-			return;
-		}
-
-		void client.createMessage(aDiscordErrorReportChannel, JSON.stringify(error) ?? '(see console)');
-	});
-
 	console.log('preparing event optimizer...');
 
 	const messageCreateRateLimiter = new RateLimiter();
