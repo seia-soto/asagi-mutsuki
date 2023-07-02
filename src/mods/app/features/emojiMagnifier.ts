@@ -6,6 +6,10 @@ const uncontrollableChannels = new LeastUsed<boolean>(2048, 1 * 30 * 60 * 1000, 
 
 const animatedEmojis = new LeastUsed<boolean>(2048, 3 * 24 * 60 * 60 * 1000); // 3 days
 
+const getAnimatedEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.gif?size=2048&quality=lossless`;
+
+const getStaticEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.png`;
+
 const handleMessageCreate = async (client: Client, message: Message<PossiblyUncachedTextableChannel>) => {
 	const singleEmojiPattern = /^<:[a-zA-Z\d_]+:(\d+)>$/i;
 	const emojiIdMatcher = singleEmojiPattern.exec(message.content);
@@ -27,7 +31,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 				icon_url: message.author.avatarURL ?? message.author.defaultAvatarURL,
 			},
 			image: {
-				url: isAnimatedEmoji ? `https://cdn.discordapp.com/emojis/${emojiId}.gif` : `https://cdn.discordapp.com/emojis/${emojiId}.png`,
+				url: isAnimatedEmoji ? getAnimatedEmojiUrl(emojiId) : getStaticEmojiUrl(emojiId),
 			},
 			color: message.author.accentColor ?? 0,
 		},
@@ -55,7 +59,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 			animatedEmojis.push(emojiId, true);
 
 			// @ts-expect-error copy.embed.image.url is set.
-			copy.embed.image.url = `https://cdn.discordapp.com/emojis/${emojiId}.gif`;
+			copy.embed.image.url = getAnimatedEmojiUrl(emojiId);
 
 			void client.createMessage(message.channel.id, copy);
 		});
