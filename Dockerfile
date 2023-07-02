@@ -20,6 +20,7 @@ run pnpm prune --prod
 from base as deploy
 workdir /app
 
+copy package.json ./
 copy --from=build /app/out ./out/
 copy --from=build /app/node_modules ./node_modules
 
