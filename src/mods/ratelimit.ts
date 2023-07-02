@@ -34,8 +34,8 @@ export class RateLimiter {
 
 			await sleep(delay);
 
-			for (const [key, value] of Object.entries(this.source)) {
-				this.source[key] = value.filter(expiration => time < expiration);
+			for (const key of Object.keys(this.source)) {
+				this.source[key] = this.source[key].filter(expiration => time < expiration);
 
 				if (!this.source[key].length) {
 					this.sourceRoots--;
