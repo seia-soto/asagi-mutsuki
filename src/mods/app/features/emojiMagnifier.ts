@@ -4,14 +4,12 @@ import {LeastUsed} from '../../hashmap.js';
 
 const uncontrollableChannels = new LeastUsed<boolean>(2048, 1 * 30 * 60 * 1000, true); // 30 mins
 
-const animatedEmojis = new LeastUsed<boolean>(2048, 3 * 24 * 60 * 60 * 1000); // 3 days
+const getAnimatedEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.gif?size=256&quality=lossless`;
 
-const getAnimatedEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.gif?size=2048&quality=lossless`;
-
-const getStaticEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.png`;
+const getStaticEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.png?size=256`;
 
 const handleMessageCreate = async (client: Client, message: Message<PossiblyUncachedTextableChannel>) => {
-	const singleEmojiPattern = /^<:[a-zA-Z\d_]+:(\d+)>$/i;
+	const singleEmojiPattern = /^<a?:[a-zA-Z\d_]+:(\d+)>$/i;
 	const emojiIdMatcher = singleEmojiPattern.exec(message.content);
 
 	if (!emojiIdMatcher) {
@@ -20,7 +18,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 
 	const [, emojiId] = emojiIdMatcher;
 
-	const isAnimatedEmoji = animatedEmojis.pull(emojiId);
+	const isAnimatedEmoji = message.content.startsWith('<a:');
 	const isChannelControllable = uncontrollableChannels.pull(message.channel.id);
 
 	const copy: MessageContent = {
@@ -47,22 +45,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 		};
 	}
 
-	void client.createMessage(message.channel.id, copy)
-		.catch((error: Error) => {
-			if (!error.name.toLowerCase().includes('unknown message')) {
-				console.error(`Unexpected message handling of content='${message.content}' id='${message.id}':`);
-				console.error(error);
-
-				return;
-			}
-
-			animatedEmojis.push(emojiId, true);
-
-			// @ts-expect-error copy.embed.image.url is set.
-			copy.embed.image.url = getAnimatedEmojiUrl(emojiId);
-
-			void client.createMessage(message.channel.id, copy);
-		});
+	void client.createMessage(message.channel.id, copy);
 
 	if (isChannelControllable === false) {
 		return;
