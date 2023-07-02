@@ -1,5 +1,10 @@
 import {type PossiblyUncachedTextableChannel, type Client, type Message, type MessageContent} from 'eris';
 import {downstreamEvents} from '../downstream.js';
+import {LeastUsed} from '../../hashmap.js';
+
+const uncontrollableChannels = new LeastUsed<boolean>(2048, 1 * 30 * 60 * 1000, true); // 30 mins
+
+const animatedEmojis = new LeastUsed<boolean>(2048, 3 * 24 * 60 * 60 * 1000); // 3 days
 
 const handleMessageCreate = async (client: Client, message: Message<PossiblyUncachedTextableChannel>) => {
 	const singleEmojiPattern = /^<:[a-zA-Z\d_]+:(\d+)>$/i;
@@ -11,6 +16,9 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 
 	const [, emojiId] = emojiIdMatcher;
 
+	const isAnimatedEmoji = animatedEmojis.pull(emojiId);
+	const isChannelControllable = uncontrollableChannels.pull(message.channel.id);
+
 	const copy: MessageContent = {
 		embed: {
 			author: {
@@ -19,7 +27,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 				icon_url: message.author.avatarURL ?? message.author.defaultAvatarURL,
 			},
 			image: {
-				url: `https://cdn.discordapp.com/emojis/${emojiId}.png`,
+				url: isAnimatedEmoji ? `https://cdn.discordapp.com/emojis/${emojiId}.gif` : `https://cdn.discordapp.com/emojis/${emojiId}.png`,
 			},
 			color: message.author.accentColor ?? 0,
 		},
@@ -35,8 +43,38 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 		};
 	}
 
-	void client.createMessage(message.channel.id, copy);
-	void client.deleteMessage(message.channel.id, message.id);
+	void client.createMessage(message.channel.id, copy)
+		.catch((error: Error) => {
+			if (!error.name.toLowerCase().includes('unknown message')) {
+				console.error(`Unexpected message handling of content='${message.content}' id='${message.id}':`);
+				console.error(error);
+
+				return;
+			}
+
+			animatedEmojis.push(emojiId, true);
+
+			// @ts-expect-error copy.embed.image.url is set.
+			copy.embed.image.url = `https://cdn.discordapp.com/emojis/${emojiId}.gif`;
+
+			void client.createMessage(message.channel.id, copy);
+		});
+
+	if (isChannelControllable === false) {
+		return;
+	}
+
+	void client.deleteMessage(message.channel.id, message.id)
+		.catch((error: Error) => {
+			if (!error.name.toLowerCase().includes('permission')) {
+				console.error(`Unexpected channel handling of message='${message.id}' channel='${message.channel.id}'`);
+				console.error(error);
+
+				return;
+			}
+
+			uncontrollableChannels.push(message.channel.id, true);
+		});
 };
 
 export const enableEmojiMagnifier = async (_client: Client) => {
