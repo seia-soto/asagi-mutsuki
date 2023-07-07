@@ -17,7 +17,7 @@ export const mutsuki = async () => {
 		],
 	});
 
-	client.once('connect', bootstrap.bind(null, client));
+	client.once('ready', bootstrap.bind(null, client));
 
 	await client.connect();
 };
