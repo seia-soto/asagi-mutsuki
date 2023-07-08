@@ -73,4 +73,6 @@ export const enableEmojiMagnifier = async (_client: Client) => {
 	console.log('% loading emoji magnifier...');
 
 	downstreamEvents.on('filteredMessageCreate', handleMessageCreate);
+
+	console.log('(loaded) emoji magnifier is ready');
 };

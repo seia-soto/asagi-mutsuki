@@ -1,4 +1,5 @@
-export type EnvKeys = 'DISCORD_TOKEN';
+export type EnvKeys = 'DISCORD_TOKEN'
+| 'BSKY_ID' | 'BSKY_PASSWORD';
 
 export const useEnv = (key: EnvKeys, isOptional = false) => {
 	const value = process.env[key];

@@ -5,13 +5,14 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "tsx ./src",
+    "start": "tsx --tsconfig ./tsconfig.json ./src",
     "build": "tsc -p ./tsconfig.build.json"
   },
   "keywords": [],
   "author": "HoJeong Go <seia@outlook.kr>",
   "license": "MIT",
   "dependencies": {
+    "@atproto/api": "^0.4.0",
     "eris": "^0.17.2"
   },
   "devDependencies": {
