@@ -1,8 +1,8 @@
 import {type PossiblyUncachedTextableChannel, type Client, type Message, type MessageContent} from 'eris';
 import {downstreamEvents} from '../downstream.js';
-import {LeastUsed} from '../../hashmap.js';
+import {BucketLimiter} from '../../ratelimit.js';
 
-const uncontrollableChannels = new LeastUsed<boolean>(2048, 1 * 30 * 60 * 1000, true); // 30 mins
+const uncontrollableChannels = new BucketLimiter();
 
 const getAnimatedEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.gif?size=256&quality=lossless`;
 
@@ -19,7 +19,11 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 	const [, emojiId] = emojiIdMatcher;
 
 	const isAnimatedEmoji = message.content.startsWith('<a:');
-	const isChannelControllable = uncontrollableChannels.pull(message.channel.id);
+	const isChannelControllable = uncontrollableChannels.consume(message.channel.id);
+
+	if (!isChannelControllable) {
+		return;
+	}
 
 	const copy: MessageContent = {
 		embed: {
@@ -45,23 +49,24 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 		};
 	}
 
-	void client.createMessage(message.channel.id, copy);
+	const response = await (async () => {
+		await Promise.all([
+			client.createMessage(message.channel.id, copy),
+			client.deleteMessage(message.channel.id, message.id),
+		]);
 
-	if (isChannelControllable === false) {
-		return;
-	}
-
-	void client.deleteMessage(message.channel.id, message.id)
+		return true;
+	})()
 		.catch((error: Error) => {
 			if (!error.name.toLowerCase().includes('permission')) {
 				console.error(`Unexpected channel handling of message='${message.id}' channel='${message.channel.id}'`);
 				console.error(error);
 
-				return;
+				return false;
 			}
-
-			uncontrollableChannels.push(message.channel.id, true);
 		});
+
+	uncontrollableChannels.feedback(message.channel.id, response);
 };
 
 export const enableEmojiMagnifier = async (_client: Client) => {

@@ -11,12 +11,10 @@ export const bootstrap = async (client: Client) => {
 	client.on('messageCreate', message => {
 		if (
 			message.author.bot
-			|| messageCreateRateLimiter.pull(message.author.id) > 2
+			|| !messageCreateRateLimiter.consume(message.author.id)
 		) {
 			return;
 		}
-
-		messageCreateRateLimiter.push(message.author.id, 1 * 1000);
 
 		downstreamEvents.emit('filteredMessageCreate', client, message);
 	});
