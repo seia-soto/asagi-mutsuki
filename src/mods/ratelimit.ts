@@ -145,20 +145,20 @@ export class BucketLimiter {
 			const runAt = Date.now();
 
 			for (; ;) {
-				const ref = this.sources.shift();
+				const ref = this.sources[0];
 
-				if (typeof ref === 'undefined') {
+				if (!ref) {
 					break;
 				}
 
-				if (ref.updatedAt < runAt + this.effects.expiration) {
-					this.sources.push(ref);
-
+				if (ref.updatedAt + this.effects.expiration >= runAt) {
 					break;
 				}
 
 				// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 				delete this.sourceRef[ref.id];
+
+				this.sources.splice(0, 1);
 			}
 		}
 	}
