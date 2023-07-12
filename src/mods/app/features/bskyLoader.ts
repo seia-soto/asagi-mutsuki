@@ -4,10 +4,11 @@ import {type Client, type Message, type MessageContent, type PossiblyUncachedTex
 import {existsSync} from 'fs';
 import {mkdir, readFile, writeFile} from 'fs/promises';
 import path from 'path';
+
 import {useEnv} from '../../env.js';
+import {TimescaleMap} from '../../hashmap.js';
 import {BucketLimiter} from '../../ratelimit.js';
 import {downstreamEvents} from '../downstream.js';
-import {TimescaleMap} from '../../hashmap.js';
 
 const uncontrollableChannels = new BucketLimiter();
 const spammingChannels = new BucketLimiter();
@@ -85,26 +86,26 @@ const handleMessageCreate = async (bsky: Atp.BskyAgent, client: Client, message:
 		const [user, thread] = bskyResponse;
 		const {post} = thread.data.thread as ThreadViewPost;
 
-		const {text, createdAt} = post.record as {
-			text: string;
+		const {createdAt, text} = post.record as {
 			createdAt: string;
+			text: string;
 		};
 
 		const reference: MessageContent = {
 			embed: {
 				author: {
-					name: user.data.displayName ? `${user.data.displayName} (@${user.data.handle})` : `@${user.data.handle} (${user.data.did})`,
-					url: `https://bsky.app/profile/${user.data.handle ?? user.data.did}`,
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					icon_url: user.data.avatar ?? '',
+					name: user.data.displayName ? `${user.data.displayName} (@${user.data.handle})` : `@${user.data.handle} (${user.data.did})`,
+					url: `https://bsky.app/profile/${user.data.handle ?? user.data.did}`,
 				},
 				description: text,
-				timestamp: createdAt,
 				footer: {
-					text: 'Bluesky',
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					icon_url: 'https://bsky.app/static/apple-touch-icon.png',
+					text: 'Bluesky',
 				},
+				timestamp: createdAt,
 			},
 			messageReference: {
 				// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -151,7 +152,6 @@ export const enableBskyLoader = async (_client: Client) => {
 	}
 
 	const agent = new Atp.BskyAgent({
-		service: 'https://bsky.social',
 		async persistSession(_event, session) {
 			if (!session) {
 				return;
@@ -161,6 +161,7 @@ export const enableBskyLoader = async (_client: Client) => {
 
 			await writeFile(resumableSessionPath, stringified, 'utf-8');
 		},
+		service: 'https://bsky.social',
 	});
 
 	let response = false;

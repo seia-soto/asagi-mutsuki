@@ -1,4 +1,5 @@
 import {type Client} from 'eris';
+
 import {RateLimiter} from '../ratelimit.js';
 import {downstreamEvents} from './downstream.js';
 import {enableBskyLoader} from './features/bskyLoader.js';

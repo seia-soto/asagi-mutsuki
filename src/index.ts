@@ -1,6 +1,7 @@
 import {Client} from 'eris';
-import {aDiscordToken} from './mods/env.js';
+
 import {bootstrap} from './mods/app/bootstrap.js';
+import {aDiscordToken} from './mods/env.js';
 
 process.on('unhandledRejection', error => {
 	console.error(error);

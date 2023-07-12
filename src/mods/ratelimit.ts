@@ -7,17 +7,11 @@ export class RateLimiter {
 	constructor(
 		readonly effects = {
 			limit: 2,
-			reset: 1000,
 			preventOnActive: false,
+			reset: 1000,
 		},
 	) {
 		void this.worker();
-	}
-
-	consume(id: string) {
-		this.sources[id] ??= 0;
-
-		return ++this.sources[id] <= this.effects.limit;
 	}
 
 	private async worker() {
@@ -27,33 +21,39 @@ export class RateLimiter {
 			this.sources = {};
 		}
 	}
+
+	consume(id: string) {
+		this.sources[id] ??= 0;
+
+		return ++this.sources[id] <= this.effects.limit;
+	}
 }
 
 export type BucketLimiterSource = {
-	id: string;
 	availability: number;
-	frequency: number;
-	negatives: number;
 	createdAt: number;
+	frequency: number;
+	id: string;
+	negatives: number;
 	updatedAt: number;
 };
 
 export class BucketLimiter {
 	public static defaultEffects = {
-		availability: 32,
-		frequency: 10,
-		stackable: 1024 * 1024,
 		// The interval time for worker to reset frequency
 		accuracy: 1000 * 2,
-		// The expiration rate for internal data source
-		expiration: 1000 * 60 * 60,
+		availability: 32,
 		// The allow maximum negatives per frequency ratio
 		expectation: 0.2,
+		// The expiration rate for internal data source
+		expiration: 1000 * 60 * 60,
+		frequency: 10,
+		stackable: 1024 * 1024,
 	};
 
-	sources: BucketLimiterSource[] = [];
-
 	sourceRef: Record<string, BucketLimiterSource> = {};
+
+	sources: BucketLimiterSource[] = [];
 
 	constructor(
 		readonly effects = BucketLimiter.defaultEffects,
@@ -61,29 +61,29 @@ export class BucketLimiter {
 		void this.worker();
 	}
 
-	ref(id: string) {
-		let ref = this.sourceRef[id];
+	private async worker() {
+		for (; ;) {
+			await sleep(this.effects.accuracy);
 
-		if (typeof ref === 'undefined') {
-			const now = Date.now();
-			const source = {
-				id,
-				availability: this.effects.availability,
-				frequency: 0,
-				negatives: 0,
-				createdAt: now,
-				updatedAt: now,
-			};
+			const runAt = Date.now();
 
-			this.sources.push(source);
-			this.sourceRef[id] = source;
+			for (; ;) {
+				const ref = this.sources[0];
 
-			ref = source;
+				if (!ref) {
+					break;
+				}
 
-			return [true, ref] as const;
+				if (ref.updatedAt + this.effects.expiration >= runAt) {
+					break;
+				}
+
+				// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+				delete this.sourceRef[ref.id];
+
+				this.sources.splice(0, 1);
+			}
 		}
-
-		return [false, ref] as const;
 	}
 
 	consume(id: string, a = 1) {
@@ -138,28 +138,28 @@ export class BucketLimiter {
 		return ref.availability;
 	}
 
-	private async worker() {
-		for (; ;) {
-			await sleep(this.effects.accuracy);
+	ref(id: string) {
+		let ref = this.sourceRef[id];
 
-			const runAt = Date.now();
+		if (typeof ref === 'undefined') {
+			const now = Date.now();
+			const source = {
+				availability: this.effects.availability,
+				createdAt: now,
+				frequency: 0,
+				id,
+				negatives: 0,
+				updatedAt: now,
+			};
 
-			for (; ;) {
-				const ref = this.sources[0];
+			this.sources.push(source);
+			this.sourceRef[id] = source;
 
-				if (!ref) {
-					break;
-				}
+			ref = source;
 
-				if (ref.updatedAt + this.effects.expiration >= runAt) {
-					break;
-				}
-
-				// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-				delete this.sourceRef[ref.id];
-
-				this.sources.splice(0, 1);
-			}
+			return [true, ref] as const;
 		}
+
+		return [false, ref] as const;
 	}
 }

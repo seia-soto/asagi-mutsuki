@@ -1,6 +1,7 @@
-import {type PossiblyUncachedTextableChannel, type Client, type Message, type MessageContent} from 'eris';
-import {downstreamEvents} from '../downstream.js';
+import {type Client, type Message, type MessageContent, type PossiblyUncachedTextableChannel} from 'eris';
+
 import {BucketLimiter} from '../../ratelimit.js';
+import {downstreamEvents} from '../downstream.js';
 
 const uncontrollableChannels = new BucketLimiter();
 
@@ -28,14 +29,14 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 	const copy: MessageContent = {
 		embed: {
 			author: {
-				name: message.author.username,
 				// eslint-disable-next-line @typescript-eslint/naming-convention
 				icon_url: message.author.avatarURL ?? message.author.defaultAvatarURL,
+				name: message.author.username,
 			},
+			color: message.author.accentColor ?? 0,
 			image: {
 				url: isAnimatedEmoji ? getAnimatedEmojiUrl(emojiId) : getStaticEmojiUrl(emojiId),
 			},
-			color: message.author.accentColor ?? 0,
 		},
 	};
 

@@ -1,43 +1,18 @@
 import {sleep} from './timer.js';
 
 export class TimescaleMap<V> {
-	sources: Array<{id: string; value: V; timestamp: number}> = [];
-
 	sourceRef: Record<string, TimescaleMap<V>['sources'][number]> = {};
+
+	sources: Array<{id: string; timestamp: number; value: V}> = [];
 
 	constructor(
 		readonly effects = {
-			expiration: 1000 * 60 * 60 * 24 * 7,
 			accuracy: 1000 * 60 * 5,
+			expiration: 1000 * 60 * 60 * 24 * 7,
 			size: 1024 * 64,
 		},
 	) {
 		void this.worker();
-	}
-
-	push(id: string, value: V) {
-		const ref = {
-			id,
-			value,
-			timestamp: Date.now(),
-		};
-
-		this.sources.push(ref);
-		this.sourceRef[id] = ref;
-
-		if (this.sources.length > this.effects.size) {
-			this.sources.shift();
-		}
-	}
-
-	pull(id: string) {
-		const ref = this.sourceRef[id];
-
-		if (typeof ref === 'undefined') {
-			return false;
-		}
-
-		return ref;
 	}
 
 	private async worker() {
@@ -63,6 +38,31 @@ export class TimescaleMap<V> {
 
 				this.sources.splice(0, 1);
 			}
+		}
+	}
+
+	pull(id: string) {
+		const ref = this.sourceRef[id];
+
+		if (typeof ref === 'undefined') {
+			return false;
+		}
+
+		return ref;
+	}
+
+	push(id: string, value: V) {
+		const ref = {
+			id,
+			timestamp: Date.now(),
+			value,
+		};
+
+		this.sources.push(ref);
+		this.sourceRef[id] = ref;
+
+		if (this.sources.length > this.effects.size) {
+			this.sources.shift();
 		}
 	}
 }
