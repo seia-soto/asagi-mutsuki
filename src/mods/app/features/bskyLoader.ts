@@ -16,7 +16,7 @@ const bskyUserCache = new TimescaleMap<Atp.AppBskyActorGetProfile.Response>();
 const bskyPostCache = new TimescaleMap<Atp.AppBskyFeedGetPostThread.Response>();
 
 const handleMessageCreate = async (bsky: Atp.BskyAgent, client: Client, message: Message<PossiblyUncachedTextableChannel>) => {
-	const bskyPostPattern = /https?:\/\/bsky\.app\/profile\/([\w\d.-]+)\/post\/([\w\d]+)/i;
+	const bskyPostPattern = /https?:\/\/(?:staging\.)?bsky\.app\/profile\/([\w\d.-]+)\/post\/([\w\d]+)/i;
 	const paramMatcher = bskyPostPattern.exec(message.content);
 
 	if (!paramMatcher) {
