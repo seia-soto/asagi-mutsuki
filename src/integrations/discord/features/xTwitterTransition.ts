@@ -7,7 +7,7 @@ import {aControlChannelContext} from '../mods/controlChannel.js';
 const suppressEmbeds = 1 << 2;
 
 const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUncachedTextableChannel>) => aControlChannelContext(mutsuki, message.channel.id, async aContext => {
-	const xLinkPattern = /x\.com\/[^ ?\n]+/gi;
+	const xLinkPattern = /(?:x\.com|(?:^|[^v]{2})twitter\.com)\/\w+(?:\/status\/\d+)?/gmi;
 	const links = [...message.content.matchAll(xLinkPattern)];
 
 	if (!links.length) {
@@ -23,7 +23,10 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 			allowedMentions: {
 				repliedUser: false,
 			},
-			content: links.map(link => 'https://' + link.toString().replace('x.com', 'twitter.com')).join('\n'),
+			content: links
+				.map(link => link.toString().split('/').filter(part => part.length).slice(1).join('/'))
+				.map(link => (link.includes('/status/') ? 'https://vxtwitter.com/' : 'https://twitter.com/') + link)
+				.join('\n'),
 			messageReference: {
 				// eslint-disable-next-line @typescript-eslint/naming-convention
 				messageID: message.id,
