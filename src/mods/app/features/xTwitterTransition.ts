@@ -9,7 +9,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 		return;
 	}
 
-	const xLinkPattern = /(x\.com\/[^ ?\n]+)/gi;
+	const xLinkPattern = /x\.com\/[^ ?\n]+/gi;
 	const links = [...message.content.matchAll(xLinkPattern)];
 
 	if (!links.length) {
