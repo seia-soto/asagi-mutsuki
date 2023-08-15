@@ -20,7 +20,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 		allowedMentions: {
 			repliedUser: false,
 		},
-		content: links.join('\n'),
+		content: links.map(link => 'https://' + link.toString().replace('x.com', 'twitter.com')).join('\n'),
 		messageReference: {
 			// eslint-disable-next-line @typescript-eslint/naming-convention
 			messageID: message.id,
