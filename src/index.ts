@@ -1,13 +1,13 @@
 import {Client} from 'eris';
 
-import {bootstrap} from './mods/app/bootstrap.js';
+import {bootstrap} from './app/bootstrap.js';
 import {aDiscordToken} from './mods/env.js';
 
-process.on('unhandledRejection', error => {
-	console.error(error);
-});
-
 export const mutsuki = async () => {
+	process.on('unhandledRejection', error => {
+		console.error(error);
+	});
+
 	console.log('connecting to Discord...');
 
 	const client = new Client(aDiscordToken, {

@@ -1,6 +1,6 @@
 import {type Client} from 'eris';
 
-import {RateLimiter} from '../ratelimit.js';
+import {RateLimiter} from '../mods/ratelimit.js';
 import {downstreamEvents} from './downstream.js';
 import {enableEmojiMagnifier} from './features/emojiMagnifier.js';
 import {enableXtwitterTransition} from './features/xTwitterTransition.js';

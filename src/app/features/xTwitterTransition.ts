@@ -1,21 +1,22 @@
 import {type Client, type Message, type PossiblyUncachedTextableChannel} from 'eris';
 
-import {downstreamEvents, uncontrollableChannels} from '../downstream.js';
+import {downstreamEvents} from '../downstream.js';
+import {uncontrollableChannels} from '../limit.js';
 
 // eslint-disable-next-line no-bitwise
 const suppressEmbeds = 1 << 2;
 
 const handleMessageCreate = async (client: Client, message: Message<PossiblyUncachedTextableChannel>) => {
-	const isChannelControllable = uncontrollableChannels.consume(message.channel.id);
-
-	if (!isChannelControllable) {
-		return;
-	}
-
 	const xLinkPattern = /x\.com\/[^ ?\n]+/gi;
 	const links = [...message.content.matchAll(xLinkPattern)];
 
 	if (!links.length) {
+		return;
+	}
+
+	const isChannelControllable = uncontrollableChannels.consume(message.channel.id);
+
+	if (!isChannelControllable) {
 		return;
 	}
 
