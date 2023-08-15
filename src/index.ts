@@ -1,26 +1,44 @@
-import {Client} from 'eris';
+import {type Logger, pino} from 'pino';
 
-import {bootstrap} from './app/bootstrap.js';
-import {aDiscordToken} from './mods/env.js';
+import {type MutsukiDiscordIntegration, aMutsukiDiscordIntegration, integrateDiscord} from './integrations/discord/bootstrap.js';
 
-export const mutsuki = async () => {
-	process.on('unhandledRejection', error => {
-		console.error(error);
-	});
-
-	console.log('connecting to Discord...');
-
-	const client = new Client(aDiscordToken, {
-		intents: [
-			'guildEmojis',
-			'guildMembers',
-			'guildMessages',
-		],
-	});
-
-	client.once('ready', bootstrap.bind(null, client));
-
-	await client.connect();
+export type MutsukiOption = {
+	shouldHandleUnhandledRejection: boolean;
 };
 
-void mutsuki();
+export type Mutsuki = {
+	integrations: {
+		discord: MutsukiDiscordIntegration;
+	};
+	logger: Logger;
+};
+
+export const aMutsuki = async (option: MutsukiOption) => {
+	const mutsuki: Mutsuki = {
+		integrations: {
+			discord: aMutsukiDiscordIntegration(),
+		},
+		logger: pino(),
+	};
+
+	if (option.shouldHandleUnhandledRejection) {
+		process.on('unhandledRejection', error => {
+			mutsuki.logger.error(error);
+		});
+	}
+
+	const bootstrapDiscord = await integrateDiscord(mutsuki);
+
+	const bootstrap = () => {
+		void bootstrapDiscord();
+	};
+
+	return [mutsuki, bootstrap] as const;
+};
+
+void aMutsuki({
+	shouldHandleUnhandledRejection: true,
+})
+	.then(([_mutsuki, bootstrap]) => {
+		bootstrap();
+	});

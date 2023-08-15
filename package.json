@@ -12,7 +12,8 @@
   "author": "HoJeong Go <seia@outlook.kr>",
   "license": "MIT",
   "dependencies": {
-    "eris": "^0.17.2"
+    "eris": "^0.17.2",
+    "pino": "^8.15.0"
   },
   "devDependencies": {
     "@types/node": "^20.3.3",
