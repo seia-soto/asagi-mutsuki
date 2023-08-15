@@ -1,15 +1,18 @@
 import {type Client, type Message, type MessageContent, type PossiblyUncachedTextableChannel} from 'eris';
 
-import {BucketLimiter} from '../../ratelimit.js';
-import {downstreamEvents} from '../downstream.js';
-
-const uncontrollableChannels = new BucketLimiter();
+import {downstreamEvents, uncontrollableChannels} from '../downstream.js';
 
 const getAnimatedEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.gif?size=256&quality=lossless`;
 
 const getStaticEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.png?size=256`;
 
 const handleMessageCreate = async (client: Client, message: Message<PossiblyUncachedTextableChannel>) => {
+	const isChannelControllable = uncontrollableChannels.consume(message.channel.id);
+
+	if (!isChannelControllable) {
+		return;
+	}
+
 	const singleEmojiPattern = /^<a?:[a-zA-Z\d_]+:(\d+)>$/i;
 	const emojiIdMatcher = singleEmojiPattern.exec(message.content);
 
@@ -18,13 +21,7 @@ const handleMessageCreate = async (client: Client, message: Message<PossiblyUnca
 	}
 
 	const [, emojiId] = emojiIdMatcher;
-
 	const isAnimatedEmoji = message.content.startsWith('<a:');
-	const isChannelControllable = uncontrollableChannels.consume(message.channel.id);
-
-	if (!isChannelControllable) {
-		return;
-	}
 
 	const copy: MessageContent = {
 		embed: {

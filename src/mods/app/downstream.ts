@@ -1,6 +1,8 @@
 import {type Client, type Message, type PossiblyUncachedTextableChannel} from 'eris';
 import EventEmitter from 'events';
 
+import {BucketLimiter} from '../ratelimit.js';
+
 type DownstreamEventTypes = {
 	'filteredMessageCreate': (client: Client, message: Message<PossiblyUncachedTextableChannel>) => void;
 };
@@ -13,3 +15,5 @@ class DownstreamEventEmitter extends EventEmitter {
 }
 
 export const downstreamEvents = new DownstreamEventEmitter();
+
+export const uncontrollableChannels = new BucketLimiter();
