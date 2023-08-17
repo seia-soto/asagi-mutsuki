@@ -57,5 +57,9 @@ export const enableEmojiMagnifier = async (mutsuki: Mutsuki) => {
 
 	discord.downstream.on('filteredMessageCreate', handleMessageCreate);
 
-	mutsuki.logger.info('emoji magnifier enabled');
+	mutsuki.logger.info({
+		feature: 'emojiMagnifier',
+		integration: 'discord',
+		state: 'enabled',
+	}, 'enabled emoji magnifier');
 };
