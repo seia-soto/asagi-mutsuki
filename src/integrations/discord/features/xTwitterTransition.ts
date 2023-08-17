@@ -18,12 +18,12 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 
 	aContext();
 
-	const content = links
+	const reformedLinks = links
 		.map(link => link.toString().split('/').slice(1).join('/'))
-		.map(link => (link.includes('/status/') ? 'https://vxtwitter.com/' : 'https://twitter.com/') + link)
-		.join('\n');
+		.map(link => (link.includes('/status/') ? 'https://vxtwitter.com/' : 'https://twitter.com/') + link);
+	const content = reformedLinks.join('\n');
 
-	if (links[0].toString() === message.content) {
+	if (reformedLinks[0] === message.content || (reformedLinks[0].includes(' ') && ['#', '?'].includes(reformedLinks[0][reformedLinks[0].length]))) {
 		await Promise.all([
 			discord.client.createMessage(message.channel.id, {
 				allowedMentions: {
