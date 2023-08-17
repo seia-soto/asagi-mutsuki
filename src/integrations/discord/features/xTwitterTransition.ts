@@ -6,6 +6,10 @@ import {aControlChannelContext} from '../mods/controlChannel.js';
 // eslint-disable-next-line no-bitwise
 const suppressEmbeds = 1 << 2;
 
+const convertLinkToPathname = (match: RegExpMatchArray) => match[0].split('/').slice(3).join('/');
+
+const convertPathnameToEmbeddableUrl = (link: string) => (link.includes('/status/') ? 'https://vxtwitter.com/' : 'https://twitter.com/') + link;
+
 const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUncachedTextableChannel>) => aControlChannelContext(mutsuki, message.channel.id, async aContext => {
 	const xLinkPattern = /https?:\/\/(?:x|twitter|fxtwitter)\.com\/\w+(?:\/status\/\d+)?/gmi;
 	const links = [...message.content.matchAll(xLinkPattern)];
@@ -18,18 +22,13 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 
 	aContext();
 
-	const reformedLinks = links
-		.map(link => link.toString().split('/').slice(1).join('/'))
-		.map(link => (link.includes('/status/') ? 'https://vxtwitter.com/' : 'https://twitter.com/') + link);
-	const content = reformedLinks.join('\n');
-
-	if (reformedLinks[0] === message.content || (reformedLinks[0].includes(' ') && ['#', '?'].includes(reformedLinks[0][reformedLinks[0].length]))) {
+	if (links[0][0] === message.content || (!message.content.includes(' ') && '?#'.includes(message.content[links[0][0].length]))) {
 		await Promise.all([
 			discord.client.createMessage(message.channel.id, {
 				allowedMentions: {
 					users: true,
 				},
-				content: `<@${message.author.id}> — ${content}`,
+				content: `<@${message.author.id}> — ${convertPathnameToEmbeddableUrl(convertLinkToPathname(links[0]))}`,
 			}),
 			discord.client.deleteMessage(message.channel.id, message.id),
 		]);
@@ -39,7 +38,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 				allowedMentions: {
 					repliedUser: false,
 				},
-				content,
+				content: links.map(convertLinkToPathname).map(convertPathnameToEmbeddableUrl).join('\n'),
 				messageReference: {
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					messageID: message.id,
