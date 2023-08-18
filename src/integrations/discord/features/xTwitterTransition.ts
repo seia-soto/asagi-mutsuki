@@ -6,12 +6,30 @@ import {aControlChannelContext} from '../mods/controlChannel.js';
 // eslint-disable-next-line no-bitwise
 const suppressEmbeds = 1 << 2;
 
-const convertLinkToPathname = (match: RegExpMatchArray) => match[0].split('/').slice(3).join('/');
+type UrlData = {
+	isPost: boolean;
+	isSpoiler: boolean;
+	pathname: string;
+};
 
-const convertPathnameToEmbeddableUrl = (link: string) => (link.includes('/status/') ? 'https://vxtwitter.com/' : 'https://twitter.com/') + link;
+const extractUrlData = (match: RegExpMatchArray): UrlData => ({
+	isPost: match[0].includes('/status/'),
+	isSpoiler: match[0].slice(0, 2) + match[0].slice(-2) === '||||',
+	pathname: match[0].split('/').slice(3).join('/'),
+});
+
+const buildEmbeddableUrl = (data: UrlData) => {
+	const url = (data.isPost ? 'https://vxtwitter.com/' : 'https://twitter.com/') + data.pathname;
+
+	if (data.isSpoiler) {
+		return '||' + url;
+	}
+
+	return url;
+};
 
 const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUncachedTextableChannel>) => aControlChannelContext(mutsuki, message.channel.id, async aContext => {
-	const xLinkPattern = /https?:\/\/(?:x|twitter|fxtwitter)\.com\/\w+(?:\/status\/\d+)?/gmi;
+	const xLinkPattern = /(?:\|\|)?https?:\/\/(?:x|twitter|fxtwitter)\.com\/\w+(?:\/status\/\d+)?(?:\|\|)?/gmi;
 	const links = [...message.content.matchAll(xLinkPattern)];
 
 	if (!links.length) {
@@ -28,7 +46,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 				allowedMentions: {
 					users: true,
 				},
-				content: `<@${message.author.id}> — ${convertPathnameToEmbeddableUrl(convertLinkToPathname(links[0]))}`,
+				content: `<@${message.author.id}> — ${buildEmbeddableUrl(extractUrlData(links[0]))}`,
 			}),
 			discord.client.deleteMessage(message.channel.id, message.id),
 		]);
@@ -38,7 +56,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 				allowedMentions: {
 					repliedUser: false,
 				},
-				content: links.map(convertLinkToPathname).map(convertPathnameToEmbeddableUrl).join('\n'),
+				content: links.map(extractUrlData).map(buildEmbeddableUrl).join('\n'),
 				messageReference: {
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					messageID: message.id,

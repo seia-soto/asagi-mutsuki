@@ -4,14 +4,18 @@ const isPermissionError = (message: string) => message.toLocaleLowerCase().inclu
 
 class ControlChannelInternalError extends Error {}
 
-export const aControlChannelContext = async (mutsiki: Mutsuki, namespace: string, proxy: (aContext: (a?: number) => void) => Promise<void>) => {
-	const {discord} = mutsiki.integrations;
+export const aControlChannelContext = async (mutsuki: Mutsuki, namespace: string, proxy: (aContext: (a?: number) => void) => Promise<void>) => {
+	const {discord} = mutsuki.integrations;
 
 	const aContext = new Proxy(discord.limits.perControlChannel.consume.bind(discord.limits.perControlChannel, namespace), {
 		apply(target, thisArg, argArray) {
 			const response = Reflect.apply(target, thisArg, argArray) as boolean;
 
 			if (!response) {
+				mutsuki.logger.warn({
+					channel: namespace,
+				}, 'rejected handling channel');
+
 				throw new ControlChannelInternalError();
 			}
 		},
@@ -26,13 +30,19 @@ export const aControlChannelContext = async (mutsiki: Mutsuki, namespace: string
 				return;
 			}
 
-			mutsiki.logger.error(error);
-
 			if (isPermissionError(error.message)) {
+				mutsuki.logger.error({
+					error,
+				}, 'permission error occured in controlled channel');
+
 				discord.limits.perControlChannel.feedback(namespace, false);
 
 				return;
 			}
+
+			mutsuki.logger.error({
+				error,
+			}, 'unknown error occured in controlled channel');
 
 			discord.limits.perControlChannel.feedback(namespace, true);
 		});
