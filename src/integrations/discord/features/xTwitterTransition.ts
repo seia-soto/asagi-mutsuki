@@ -40,7 +40,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 
 	aContext();
 
-	if (links[0][0] === message.content || (!message.content.includes(' ') && '?#'.includes(message.content[links[0][0].length]))) {
+	if (links[0][0] === message.content || (!message.content.includes(' ') && '?/#'.includes(message.content[links[0][0].length]))) {
 		await Promise.all([
 			discord.client.createMessage(message.channel.id, {
 				allowedMentions: {
