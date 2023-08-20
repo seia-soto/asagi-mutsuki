@@ -63,8 +63,8 @@ export const handleInteractionCreate = async (mutsuki: Mutsuki, interaction: Com
 	if (
 		message.author.id === mutsuki.integrations.discord.client.user.id
 		&& (
-			!message.mentions.includes(interaction.member.user)
-			|| message.embeds?.[0].author?.name !== interaction.member.username
+			message.mentions.includes(interaction.member.user)
+			|| message.embeds?.[0].author?.name === interaction.member.username
 		)
 	) {
 		await mutsuki.integrations.discord.client.deleteMessage(possibleMessageData[1], possibleMessageData[2], 'The user requested to delete the bot message created by thierself.');
