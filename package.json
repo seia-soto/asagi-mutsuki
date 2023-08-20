@@ -12,6 +12,7 @@
   "author": "HoJeong Go <seia@outlook.kr>",
   "license": "MIT",
   "dependencies": {
+    "@atproto/api": "^0.6.4",
     "eris": "^0.17.2",
     "pino": "^8.15.0"
   },

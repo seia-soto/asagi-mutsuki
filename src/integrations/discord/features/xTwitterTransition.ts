@@ -1,10 +1,7 @@
-import {type Message, type PossiblyUncachedTextableChannel} from 'eris';
+import {Constants, type Message, type PossiblyUncachedTextableChannel} from 'eris';
 
 import {type Mutsuki} from '../../../index.js';
 import {aControlChannelContext} from '../mods/controlChannel.js';
-
-// eslint-disable-next-line no-bitwise
-const suppressEmbeds = 1 << 2;
 
 type UrlData = {
 	isPost: boolean;
@@ -65,7 +62,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 			}),
 			discord.client.editMessage(message.channel.id, message.id, {
 				// eslint-disable-next-line no-bitwise
-				flags: suppressEmbeds | message.flags,
+				flags: Constants.MessageFlags.SUPPRESS_EMBEDS | message.flags,
 			}),
 		]);
 	}
@@ -76,9 +73,5 @@ export const enableXtwitterTransition = async (mutsuki: Mutsuki) => {
 
 	discord.downstream.on('filteredMessageCreate', handleMessageCreate);
 
-	mutsuki.logger.info({
-		feature: 'xTwitterTransition',
-		integration: 'discord',
-		state: 'enabled',
-	}, 'enabled x-twitter transition');
+	mutsuki.logger.info('enabled x-twitter transition');
 };

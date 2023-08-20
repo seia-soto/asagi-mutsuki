@@ -3,6 +3,7 @@ import {type ApplicationCommand, Client} from 'eris';
 import {type Mutsuki} from '../../index.js';
 import {aDiscordToken, useEnv} from '../../mods/env.js';
 import {BucketLimiter, RateLimiter} from '../../mods/ratelimit.js';
+import {enableBskyLoader} from './features/bskyLoader.js';
 import {enableDeleteMy} from './features/deleteMy.js';
 import {enableEmojiMagnifier} from './features/emojiMagnifier.js';
 import {enableXtwitterTransition} from './features/xTwitterTransition.js';
@@ -15,6 +16,9 @@ export type MutsukiDiscordIntegration = {
 	limits: {
 		perControlChannel: BucketLimiter;
 		perMessage: RateLimiter;
+	};
+	meta: {
+		isReady: boolean;
 	};
 	options: {
 		shouldUpdateApplicationCommands?: boolean;
@@ -34,6 +38,9 @@ export const aMutsukiDiscordIntegration: () => MutsukiDiscordIntegration = () =>
 	limits: {
 		perControlChannel: new BucketLimiter(),
 		perMessage: new RateLimiter(),
+	},
+	meta: {
+		isReady: false,
 	},
 	options: {
 		shouldUpdateApplicationCommands: typeof useEnv('DISCORD_SHOULD_UPDATE_APPLICATION_COMMANDS', true) !== 'undefined',
@@ -64,6 +71,11 @@ export const integrateDiscord = async (mutsuki: Mutsuki) => {
 		await enableEmojiMagnifier(mutsuki);
 		await enableXtwitterTransition(mutsuki);
 		await enableDeleteMy(mutsuki);
+		await enableBskyLoader(mutsuki);
+
+		discord.meta.isReady = true;
+
+		mutsuki.logger.info('bootstrapped discord integration');
 	});
 
 	return async () => {
