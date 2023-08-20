@@ -4,7 +4,11 @@ const isPermissionError = (message: string) => message.toLocaleLowerCase().inclu
 
 class ControlChannelInternalError extends Error {}
 
-export const aControlChannelContext = async (mutsuki: Mutsuki, namespace: string, proxy: (aContext: (a?: number) => void) => Promise<void>) => {
+export const aControlChannelContext = async (
+	mutsuki: Mutsuki,
+	namespace: string,
+	proxy: (aContext: (a?: number) => void) => Promise<void>,
+) => {
 	const {discord} = mutsuki.integrations;
 
 	const aContext = new Proxy(discord.limits.perControlChannel.consume.bind(discord.limits.perControlChannel, namespace), {

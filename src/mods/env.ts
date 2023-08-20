@@ -1,4 +1,4 @@
-export type EnvKeys = 'DISCORD_TOKEN';
+export type EnvKeys = 'DISCORD_SHOULD_UPDATE_APPLICATION_COMMANDS' | 'DISCORD_TOKEN';
 
 export const useEnv = (key: EnvKeys, isOptional = false) => {
 	const value = process.env[key];

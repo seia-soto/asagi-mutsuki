@@ -44,7 +44,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 		await Promise.all([
 			discord.client.createMessage(message.channel.id, {
 				allowedMentions: {
-					users: true,
+					users: false,
 				},
 				content: `<@${message.author.id}> — ${buildEmbeddableUrl(extractUrlData(links[0]))}`,
 			}),
@@ -55,8 +55,9 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 			discord.client.createMessage(message.channel.id, {
 				allowedMentions: {
 					repliedUser: false,
+					users: false,
 				},
-				content: links.map(extractUrlData).map(buildEmbeddableUrl).join('\n'),
+				content: `<@${message.author.id}> —${links.map(extractUrlData).map(buildEmbeddableUrl).join('\n')}`,
 				messageReference: {
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					messageID: message.id,
