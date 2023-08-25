@@ -121,7 +121,7 @@ const handleGuildEmojisUpdate = async (mutsuki: Mutsuki, guild: Guild, emojis: E
 	let updatedEmotes = [...cachedEmote.value, ...emojis];
 
 	if (removedEmojis) {
-		updatedEmotes = cachedEmote.value.filter(emote => !removedEmojis.find(removedEmoji => emote.id === removedEmoji.id));
+		updatedEmotes = cachedEmote.value.filter(emote => typeof removedEmojis.find(removedEmoji => emote.id === removedEmoji.id) === 'undefined');
 	}
 
 	discord.caches.guildEmotes.push(guild.id, updatedEmotes);
