@@ -58,7 +58,12 @@ export class TimescaleMap<V> {
 			value,
 		};
 
-		this.sources.push(ref);
+		if (typeof this.sourceRef[id] === 'undefined') {
+			this.sources.push(ref);
+		} else {
+			this.sources.splice(this.sources.indexOf(this.sourceRef[id]), 1, ref);
+		}
+
 		this.sourceRef[id] = ref;
 
 		if (this.sources.length > this.effects.size) {
