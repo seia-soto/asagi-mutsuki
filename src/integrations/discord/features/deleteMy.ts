@@ -29,23 +29,21 @@ const applicationCommand: ApplicationCommandStructure = {
 			type: Constants.ApplicationCommandOptionTypes.STRING,
 		},
 	],
-	type: 1,
+	type: Constants.ApplicationCommandTypes.CHAT_INPUT,
 };
 
-export const handleInteractionCreate = async (mutsuki: Mutsuki, interaction: CommandInteraction) => {
+const handleInteractionCreate = async (mutsuki: Mutsuki, interaction: CommandInteraction) => {
 	if (
 		interaction.type !== Constants.InteractionTypes.APPLICATION_COMMAND
 		|| !interaction.member
 		|| interaction.data.name !== commandName
 		|| interaction.data.options?.[0].name !== optionName
-		|| interaction.data.options?.[0].type !== Constants.ApplicationCommandOptionTypes.STRING
+		|| interaction.data.options[0].type !== Constants.ApplicationCommandOptionTypes.STRING
 	) {
-		await interaction.createMessage('❎');
-
 		return;
 	}
 
-	const possibleMessageData = /^https:\/\/discord\.com\/channels\/\d+\/(\d+)\/(\d+)/i.exec(interaction.data.options?.[0].value);
+	const possibleMessageData = /^https:\/\/discord\.com\/channels\/\d+\/(\d+)\/(\d+)/i.exec(interaction.data.options[0].value);
 
 	if (!possibleMessageData) {
 		await interaction.createMessage('❎');
