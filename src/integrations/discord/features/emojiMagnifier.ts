@@ -61,19 +61,7 @@ const handleInteractionCreate = async (mutsuki: Mutsuki, interaction: CommandInt
 
 	const {discord} = mutsuki.integrations;
 
-	const cachedEmote = discord.caches.guildEmotes.pull(interaction.guildID);
-	let emotes: Emoji[];
-
-	if (cachedEmote) {
-		emotes = cachedEmote.value;
-	} else {
-		const live = await discord.client.getRESTGuildEmojis(interaction.guildID);
-
-		discord.caches.guildEmotes.push(interaction.guildID, live);
-
-		emotes = live;
-	}
-
+	const emotes = await discord.client.getRESTGuildEmojis(interaction.guildID);
 	const emote = emotes.find(emote => emote.animated && emote.name === animatedEmoteName);
 
 	if (!emote) {
@@ -107,24 +95,6 @@ const handleInteractionCreate = async (mutsuki: Mutsuki, interaction: CommandInt
 		name: referencingEmoteName,
 	});
 	await interaction.createMessage('✅');
-};
-
-const handleGuildEmojisUpdate = async (mutsuki: Mutsuki, guild: Guild, emojis: Emoji[], removedEmojis: Emoji[] | undefined) => {
-	const {discord} = mutsuki.integrations;
-
-	const cachedEmote = discord.caches.guildEmotes.pull(guild.id);
-
-	if (!cachedEmote) {
-		return;
-	}
-
-	let updatedEmotes = [...cachedEmote.value, ...emojis];
-
-	if (removedEmojis) {
-		updatedEmotes = cachedEmote.value.filter(emote => typeof removedEmojis.find(removedEmoji => emote.id === removedEmoji.id) === 'undefined');
-	}
-
-	discord.caches.guildEmotes.push(guild.id, updatedEmotes);
 };
 
 const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUncachedTextableChannel>) => aControlChannelContext(mutsuki, message.channel.id, async aContext => {
@@ -189,7 +159,6 @@ export const enableEmojiMagnifier = async (mutsuki: Mutsuki) => {
 	}
 
 	discord.downstream.on('filteredMessageCreate', handleMessageCreate);
-	discord.client.on('guildEmojisUpdate', handleGuildEmojisUpdate);
 	discord.client.on('interactionCreate', handleInteractionCreate.bind(null, mutsuki));
 
 	mutsuki.logger.info('enabled emoji magnifier');

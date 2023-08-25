@@ -1,19 +1,14 @@
-import {type ApplicationCommand, Client, type Emoji} from 'eris';
+import {type ApplicationCommand, Client} from 'eris';
 
 import {type Mutsuki} from '../../index.js';
 import {aDiscordToken, useEnv} from '../../mods/env.js';
-import {TimescaleMap} from '../../mods/hashmap.js';
 import {BucketLimiter, RateLimiter} from '../../mods/ratelimit.js';
 import {enableBskyLoader} from './features/bskyLoader.js';
-import {enableDeleteMy} from './features/deleteMy.js';
 import {enableEmojiMagnifier} from './features/emojiMagnifier.js';
 import {enableXtwitterTransition} from './features/xTwitterTransition.js';
 import {DownstreamEventEmitter} from './mods/downstream.js';
 
 export type MutsukiDiscordIntegration = {
-	caches: {
-		guildEmotes: TimescaleMap<Emoji[]>;
-	};
 	client: Client;
 	commands: ApplicationCommand[];
 	downstream: DownstreamEventEmitter;
@@ -30,9 +25,6 @@ export type MutsukiDiscordIntegration = {
 };
 
 export const aMutsukiDiscordIntegration: () => MutsukiDiscordIntegration = () => ({
-	caches: {
-		guildEmotes: new TimescaleMap(),
-	},
 	client: new Client(aDiscordToken, {
 		intents: [
 			'guildEmojis',
@@ -78,7 +70,6 @@ export const integrateDiscord = async (mutsuki: Mutsuki) => {
 
 		await enableEmojiMagnifier(mutsuki);
 		await enableXtwitterTransition(mutsuki);
-		await enableDeleteMy(mutsuki);
 		await enableBskyLoader(mutsuki);
 
 		discord.meta.isReady = true;
