@@ -131,7 +131,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 	const singleEmojiPattern = /^<a?:([a-zA-Z\d_]+):(\d+)>$/i;
 	const emojiIdMatcher = singleEmojiPattern.exec(message.content);
 
-	if (!emojiIdMatcher) {
+	if (!emojiIdMatcher || message.attachments.length) {
 		return;
 	}
 
