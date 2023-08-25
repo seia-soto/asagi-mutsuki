@@ -54,7 +54,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 					repliedUser: false,
 					users: false,
 				},
-				content: `<@${message.author.id}> —${links.map(extractUrlData).map(buildEmbeddableUrl).join('\n')}`,
+				content: `<@${message.author.id}>\n${links.map(extractUrlData).map(buildEmbeddableUrl).join('\n')}`,
 				messageReference: {
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					messageID: message.id,
