@@ -1,13 +1,13 @@
-import {type ApplicationCommandStructure, type CommandInteraction, Constants, type Emoji, type Guild, type Message, type MessageContent, type PossiblyUncachedTextableChannel} from 'eris';
+import {type ApplicationCommandStructure, type CommandInteraction, Constants, type Message, type MessageContent, type PossiblyUncachedTextableChannel} from 'eris';
 import got from 'got';
 import sharp from 'sharp';
 
 import {type Mutsuki} from '../../../index.js';
 import {aControlChannelContext} from '../mods/controlChannel.js';
 
-const getAnimatedEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.gif?size=256&quality=lossless`;
+const getAnimatedEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.gif?size=128&quality=lossless`;
 
-const getStaticEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.png?size=256`;
+const getStaticEmojiUrl = (id: string) => `https://cdn.discordapp.com/emojis/${id}.png?size=128`;
 
 const commandName = 'snapshot_emote';
 
