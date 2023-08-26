@@ -72,6 +72,12 @@ const handleInteractionCreate = async (mutsuki: Mutsuki, interaction: CommandInt
 
 	const referencingEmoteName = animatedEmoteName + 'xff' + emote.id;
 
+	if (referencingEmoteName.length > 32) {
+		await interaction.createMessage(`👀 N=${animatedEmoteName.length} (N < ${32 - ('xff' + emote.id).length})`);
+
+		return;
+	}
+
 	if (emotes.find(emote => emote.name === referencingEmoteName)) {
 		await interaction.createMessage('😓');
 
