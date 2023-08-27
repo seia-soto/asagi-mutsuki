@@ -104,10 +104,14 @@ const handleInteractionCreate = async (mutsuki: Mutsuki, interaction: CommandInt
 };
 
 const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUncachedTextableChannel>) => aControlChannelContext(mutsuki, message.channel.id, async aContext => {
+	if (message.attachments.length) {
+		return;
+	}
+
 	const singleEmojiPattern = /^<a?:([a-zA-Z\d_]+):(\d+)>$/i;
 	const emojiIdMatcher = singleEmojiPattern.exec(message.content);
 
-	if (!emojiIdMatcher || message.attachments.length) {
+	if (!emojiIdMatcher) {
 		return;
 	}
 
