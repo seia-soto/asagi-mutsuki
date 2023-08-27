@@ -2,7 +2,7 @@ import {type ApplicationCommand, Client} from 'eris';
 
 import {type Mutsuki} from '../../index.js';
 import {aDiscordToken, useEnv} from '../../mods/env.js';
-import {BucketLimiter, RateLimiter} from '../../mods/ratelimit.js';
+import {BucketLimiter} from '../../mods/ratelimit.js';
 import {enableBskyLoader} from './features/bskyLoader.js';
 import {enableEmojiMagnifier} from './features/emojiMagnifier.js';
 import {enableXtwitterTransition} from './features/xTwitterTransition.js';
@@ -14,7 +14,7 @@ export type MutsukiDiscordIntegration = {
 	downstream: DownstreamEventEmitter;
 	limits: {
 		perControlChannel: BucketLimiter;
-		perMessage: RateLimiter;
+		perMessage: BucketLimiter;
 	};
 	meta: {
 		isReady: boolean;
@@ -37,7 +37,14 @@ export const aMutsukiDiscordIntegration: () => MutsukiDiscordIntegration = () =>
 	downstream: new DownstreamEventEmitter(),
 	limits: {
 		perControlChannel: new BucketLimiter(),
-		perMessage: new RateLimiter(),
+		perMessage: new BucketLimiter({
+			budget: 3,
+			budgetIncreaseInterval: 1000 * 2,
+			budgetIncreaseScalingNegativeThreshold: 0.5,
+			budgetThreshold: 4,
+			// The expiration time for internal data source
+			expiration: 1000 * 60,
+		}),
 	},
 	meta: {
 		isReady: false,
@@ -61,6 +68,7 @@ export const integrateDiscord = async (mutsuki: Mutsuki) => {
 		}
 
 		discord.downstream.emit('filteredMessageCreate', mutsuki, message);
+		discord.limits.perMessage.feedback(message.author.id);
 	});
 
 	discord.client.once('ready', async () => {

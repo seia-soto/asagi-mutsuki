@@ -1,55 +1,25 @@
 /* eslint-disable no-await-in-loop */
 import {sleep} from './timer.js';
 
-export class RateLimiter {
-	sources: Record<string, number> = {};
-
-	constructor(
-		readonly effects = {
-			limit: 2,
-			preventOnActive: false,
-			reset: 1000,
-		},
-	) {
-		void this.worker();
-	}
-
-	private async worker() {
-		for (; ;) {
-			await sleep(this.effects.reset);
-
-			this.sources = {};
-		}
-	}
-
-	consume(id: string) {
-		this.sources[id] ??= 0;
-
-		return ++this.sources[id] <= this.effects.limit;
-	}
-}
-
 export type BucketLimiterSource = {
-	availability: number;
-	createdAt: number;
-	frequency: number;
+	budget: number;
 	id: string;
-	negatives: number;
-	updatedAt: number;
+	lat: number; // Last access time
+	used: number;
+	usedNegatively: number;
 };
 
 export class BucketLimiter {
 	public static defaultEffects = {
-		// The interval time for worker to reset frequency
-		accuracy: 1000 * 2,
-		availability: 32,
-		// The allow maximum negatives per frequency ratio
-		expectation: 0.2,
-		// The expiration rate for internal data source
-		expiration: 1000 * 60 * 60,
-		frequency: 10,
-		stackable: 1024 * 1024,
+		budget: 4,
+		budgetIncreaseInterval: 1000 * 1.5,
+		budgetIncreaseScalingNegativeThreshold: 0.4,
+		budgetThreshold: 6,
+		// The expiration time for internal data source
+		expiration: 1000 * 60 * 5,
 	};
+
+	isWorkerBeingManaged = false;
 
 	sourceRef: Record<string, BucketLimiterSource> = {};
 
@@ -57,109 +27,127 @@ export class BucketLimiter {
 
 	constructor(
 		readonly effects = BucketLimiter.defaultEffects,
-	) {
-		void this.worker();
-	}
+	) {}
 
-	private async worker() {
-		for (; ;) {
-			await sleep(this.effects.accuracy);
-
-			const runAt = Date.now();
-
-			for (; ;) {
-				const ref = this.sources[0];
-
-				if (!ref) {
-					break;
-				}
-
-				if (ref.updatedAt + this.effects.expiration >= runAt) {
-					break;
-				}
-
-				// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-				delete this.sourceRef[ref.id];
-
-				this.sources.splice(0, 1);
-			}
-		}
-	}
-
-	consume(id: string, a = 1) {
-		const [, ref] = this.ref(id);
-
-		if ((ref.negatives / ref.frequency) > this.effects.expectation) {
-			return false;
-		}
-
-		ref.updatedAt = Date.now();
-
-		if (++ref.frequency >= this.effects.stackable) {
-			if (ref.negatives) {
-				ref.negatives = Math.max(ref.negatives - (1024 * 8), 0);
-			}
-
-			ref.frequency -= 1024 * 8;
-		}
-
-		// If there's no budget
-		if (!ref.availability) {
-			return false;
-		}
-
-		// Consume the budget
-		ref.availability -= a;
-
-		return true;
-	}
-
-	feedback(id: string, positive = true) {
-		const [, ref] = this.ref(id);
-
-		if (!positive) {
-			ref.negatives++;
-
+	private async activateWorker() {
+		if (this.isWorkerBeingManaged) {
 			return;
 		}
 
-		return this.fill(ref, 2);
+		this.isWorkerBeingManaged = true;
+
+		for (; ;) {
+			const now = Date.now();
+			const ran = await this.worker(now);
+
+			if (!ran) {
+				this.isWorkerBeingManaged = false;
+
+				break;
+			}
+
+			await sleep(Date.now() + 100 - now);
+		}
 	}
 
-	fill(ref: BucketLimiterSource, n = 1) {
-		if (ref.availability <= this.effects.availability) {
-			if (ref.availability + n === this.effects.availability) {
-				ref.availability = this.effects.availability;
-			} else {
-				ref.availability += n;
+	private create(id: string) {
+		if (this.sourceRef[id]) {
+			this.delete(id);
+		}
+
+		const now = Date.now();
+		const entity: BucketLimiterSource = {
+			budget: this.effects.budget,
+			id,
+			lat: now,
+			used: 0,
+			usedNegatively: 0,
+		};
+
+		this.sourceRef[id] = entity;
+		this.sources.push(entity);
+
+		return entity;
+	}
+
+	private delete(id: string) {
+		this.sources.splice(this.sources.indexOf(this.sourceRef[id]));
+
+		// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+		delete this.sourceRef[id];
+	}
+
+	private get(id: string) {
+		const entity = this.sourceRef[id];
+
+		if (entity && Date.now() > entity.lat + this.effects.expiration) {
+			this.delete(entity.id);
+
+			return undefined;
+		}
+
+		return entity;
+	}
+
+	private async worker(now: number) {
+		for (let i = 0; i < 20; i++) {
+			const entity = this.sources[0];
+
+			if (!entity) {
+				return i;
+			}
+
+			if (entity.lat < now - this.effects.expiration) {
+				this.delete(entity.id);
 			}
 		}
-
-		return ref.availability;
 	}
 
-	ref(id: string) {
-		let ref = this.sourceRef[id];
+	consume(id: string) {
+		const entity = this.get(id);
 
-		if (typeof ref === 'undefined') {
-			const now = Date.now();
-			const source = {
-				availability: this.effects.availability,
-				createdAt: now,
-				frequency: 0,
-				id,
-				negatives: 0,
-				updatedAt: now,
-			};
+		if (!entity) {
+			this.create(id);
 
-			this.sources.push(source);
-			this.sourceRef[id] = source;
-
-			ref = source;
-
-			return [true, ref] as const;
+			return true;
 		}
 
-		return [false, ref] as const;
+		const now = Date.now();
+
+		// eslint-disable-next-line no-bitwise
+		const budgetScale = ((Math.min(
+			this.effects.budgetThreshold,
+			((now - entity.lat) / this.effects.budgetIncreaseInterval)
+			* (1 - Math.min(entity.usedNegatively / entity.used, this.effects.budgetIncreaseScalingNegativeThreshold)),
+		) * 1000) | 0) / 1000;
+
+		entity.budget = Math.min(entity.used + this.effects.budgetThreshold, entity.budget + budgetScale);
+
+		if (entity.used > this.effects.budgetThreshold) {
+			entity.budget -= this.effects.budgetThreshold;
+			entity.used -= this.effects.budgetThreshold;
+		}
+
+		return entity.budget > entity.used;
+	}
+
+	feedback(id: string, positive = true) {
+		const entity = this.get(id);
+
+		if (!entity) {
+			return;
+		}
+
+		entity.used += 1;
+
+		if (!positive) {
+			entity.usedNegatively += 1;
+		}
+
+		entity.lat = Date.now();
+
+		this.sources.push(this.sources.splice(this.sources.indexOf(entity), 1)[0]);
+
+		void this.activateWorker();
 	}
 }
