@@ -11,9 +11,11 @@ export const aControlChannelContext = async (
 ) => {
 	const {discord} = mutsuki.integrations;
 
+	let response = false;
+
 	const aContext = new Proxy(discord.limits.perControlChannel.consume.bind(discord.limits.perControlChannel, namespace), {
 		apply(target, thisArg, argArray) {
-			const response = Reflect.apply(target, thisArg, argArray) as boolean;
+			response = Reflect.apply(target, thisArg, argArray) as boolean;
 
 			if (!response) {
 				mutsuki.logger.warn({
@@ -25,29 +27,17 @@ export const aControlChannelContext = async (
 		},
 	});
 
-	proxy(aContext)
-		.then(() => {
-			discord.limits.perControlChannel.feedback(namespace, true);
-		})
-		.catch((error: Error) => {
-			if (error instanceof ControlChannelInternalError) {
-				return;
-			}
+	const [result, error] = await proxy(aContext)
+		.then(() => [true] as const)
+		.catch((error: Error) => [false, error] as const);
 
-			if (isPermissionError(error.message)) {
-				mutsuki.logger.error({
-					error,
-				}, 'permission error occured in controlled channel');
+	if (!response) {
+		return;
+	}
 
-				discord.limits.perControlChannel.feedback(namespace, false);
+	if (!result && isPermissionError(error.message)) {
+		discord.limits.perControlChannel.feedback(namespace, false);
+	}
 
-				return;
-			}
-
-			mutsuki.logger.error({
-				error,
-			}, 'unknown error occured in controlled channel');
-
-			discord.limits.perControlChannel.feedback(namespace, true);
-		});
+	discord.limits.perControlChannel.feedback(namespace, true);
 };
