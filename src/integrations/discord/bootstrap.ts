@@ -26,6 +26,32 @@ export type MutsukiDiscordIntegration = {
 
 export const aMutsukiDiscordIntegration: () => MutsukiDiscordIntegration = () => ({
 	client: new Client(aDiscordToken, {
+		disableEvents: {
+			/* eslint-disable @typescript-eslint/naming-convention */
+			CHANNEL_CREATE: true,
+			CHANNEL_DELETE: true,
+			CHANNEL_UPDATE: true,
+			GUILD_BAN_ADD: true,
+			GUILD_BAN_REMOVE: true,
+			GUILD_CREATE: true,
+			GUILD_DELETE: true,
+			GUILD_MEMBER_ADD: true,
+			GUILD_MEMBER_REMOVE: true,
+			GUILD_MEMBER_UPDATE: true,
+			GUILD_ROLE_CREATE: true,
+			GUILD_ROLE_DELETE: true,
+			GUILD_ROLE_UPDATE: true,
+			GUILD_UPDATE: true,
+			MESSAGE_CREATE: false,
+			MESSAGE_DELETE: true,
+			MESSAGE_DELETE_BULK: true,
+			MESSAGE_UPDATE: true,
+			PRESENCE_UPDATE: true,
+			TYPING_START: true,
+			USER_UPDATE: true,
+			VOICE_STATE_UPDATE: true,
+			/* eslint-enable @typescript-eslint/naming-convention */
+		},
 		intents: [
 			'guildEmojis',
 			'guildMembers',
