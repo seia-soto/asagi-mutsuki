@@ -13,14 +13,26 @@ const extractUrlData = (match: string): UrlData => ({
 	pathname: match.split('/').slice(3).join('/'),
 });
 
-const buildEmbeddableUrl = (data: UrlData) => {
-	const url = 'https://vxtwitter.com/' + data.pathname;
-
+const extractPathname = (data: UrlData) => {
 	if (data.isSpoiler) {
-		return '||' + url;
+		return data.pathname.slice(0, -2);
 	}
 
-	return url;
+	return data.pathname;
+};
+
+const buildEmbeddableUrl = (data: UrlData) => {
+	const pathname = extractPathname(data);
+
+	if (data.isSpoiler) {
+		return `||https://vxtwitter.com/${data.pathname}||
+[Twitter](https://twitter.com/${data.pathname})
+[Nitter](https://nitter.net/${data.pathname})`;
+	}
+
+	return `https://vxtwitter.com/${data.pathname}
+[Twitter](https://twitter.com/${data.pathname})
+[Nitter](https://nitter.net/${data.pathname})`;
 };
 
 const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUncachedTextableChannel>) => aControlChannelContext(mutsuki, message.channel.id, async aContext => {

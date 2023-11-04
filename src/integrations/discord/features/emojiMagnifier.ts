@@ -19,7 +19,7 @@ const applicationCommand: ApplicationCommandStructure = {
 	description: 'Snapshot an animated emote and make a static emote linked with',
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	description_localizations: {
-		ko: '움직이는 이모지를 캡쳐 후 연동되는 정적 이모지 생성',
+		ko: '움직이는 이모지를 캡쳐 후 연동되는 정적 이모지 생성합니다',
 	},
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	dm_permission: false,
