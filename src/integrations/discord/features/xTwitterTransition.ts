@@ -21,19 +21,7 @@ const extractPathname = (data: UrlData) => {
 	return data.pathname;
 };
 
-const buildEmbeddableUrl = (data: UrlData) => {
-	const pathname = extractPathname(data);
-
-	if (data.isSpoiler) {
-		return `||https://vxtwitter.com/${data.pathname}||
-[Twitter](https://twitter.com/${data.pathname})
-[Nitter](https://nitter.net/${data.pathname})`;
-	}
-
-	return `https://vxtwitter.com/${data.pathname}
-[Twitter](https://twitter.com/${data.pathname})
-[Nitter](https://nitter.net/${data.pathname})`;
-};
+const buildUrl = (service: 'nitter.net' | 'twitter.com' | 'vxtwitter.com', data: UrlData) => `https://${service}/${extractPathname(data)}`;
 
 const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUncachedTextableChannel>) => aControlChannelContext(mutsuki, message.channel.id, async aContext => {
 	if (message.attachments.length) {
@@ -50,12 +38,34 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 
 	const {discord} = mutsuki.integrations;
 
+	const urlData = extractUrlData(link[0]);
+	const urlWrapper = urlData.isSpoiler ? '||' : '';
+
 	await Promise.all([
 		discord.client.createMessage(message.channel.id, {
 			allowedMentions: {
 				users: false,
 			},
-			content: `<@${message.author.id}> — ${buildEmbeddableUrl(extractUrlData(link[0]))}`,
+			components: [
+				{
+					components: [
+						{
+							label: 'Nitter',
+							style: Constants.ButtonStyles.LINK,
+							type: Constants.ComponentTypes.BUTTON,
+							url: buildUrl('nitter.net', urlData),
+						},
+						{
+							label: 'Twitter',
+							style: Constants.ButtonStyles.LINK,
+							type: Constants.ComponentTypes.BUTTON,
+							url: buildUrl('twitter.com', urlData),
+						},
+					],
+					type: Constants.ComponentTypes.ACTION_ROW,
+				},
+			],
+			content: `<@${message.author.id}> — ${urlWrapper}${buildUrl('vxtwitter.com', urlData)}${urlWrapper}`,
 		}),
 		discord.client.deleteMessage(message.channel.id, message.id),
 	]);
