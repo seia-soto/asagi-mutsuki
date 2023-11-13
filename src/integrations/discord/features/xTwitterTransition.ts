@@ -28,7 +28,7 @@ const handleMessageCreate = async (mutsuki: Mutsuki, message: Message<PossiblyUn
 		return;
 	}
 
-	const link = /^(?:\|\|)?https?:\/\/(?:x|twitter|fxtwitter)\.com\/\w+\/status\/\d+(?:\|\|)?/i.exec(message.content);
+	const link = /^(?:\|\|)?https?:\/\/(?:x|twitter|fxtwitter|fixupx)\.com\/\w+\/status\/\d+(?:\|\|)?/i.exec(message.content);
 
 	if (!link || message.content.includes(' ') || (message.content[link[0].length] && !'?/#'.includes(message.content[link[0].length]))) {
 		return;
