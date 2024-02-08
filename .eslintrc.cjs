@@ -6,7 +6,6 @@ module.exports = {
 	},
 	extends: [
 		'xo',
-		'plugin:perfectionist/recommended-natural',
 	],
 	overrides: [
 		{
