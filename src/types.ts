@@ -1,5 +1,5 @@
-import {type DiscordPlugin} from './plugin/discord';
-import {type PluginMethods} from './plugin/types';
+import {type DiscordPlugin} from './plugins/discord';
+import {type PluginMethods} from './plugins/types';
 
 export type Plugins = {
 	discord: DiscordPlugin & PluginMethods;
